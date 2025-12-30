@@ -10,6 +10,7 @@
 #endif
 #include <pthread.h>
 #include <sched.h>
+#include <unistd.h>
 
 #define SMTL_MAX_THREADS 512
 
@@ -58,8 +59,8 @@ static void thread_bind(int cpu)
     cpu_set_t cpu_set;
     CPU_ZERO(&cpu_set);
     CPU_SET(cpu, &cpu_set);
-    if (pthread_setaffinity_np(pthread_self(),
-            sizeof(cpu_set_t), &cpu_set) != 0)
+    pid_t current = gettid();
+    if (sched_setaffinity(current, sizeof(cpu_set_t), &cpu_set) != 0)
     {
         fprintf(stderr, "Error: cpu[%d] bind failed.\n", cpu);
         exit(0);
