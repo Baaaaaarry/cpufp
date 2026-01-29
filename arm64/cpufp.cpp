@@ -14,6 +14,22 @@ using namespace std;
 
 extern "C"
 {
+#ifdef _INT_
+    void int_add(int64_t);
+    void int_sub(int64_t);
+    void int_and(int64_t);
+    void int_orr(int64_t);
+    void int_eor(int64_t);
+    void int_lsl(int64_t);
+    void int_lsr(int64_t);
+    void int_asr(int64_t);
+    void int_mul(int64_t);
+    void int_madd(int64_t);
+    void int_msub(int64_t);
+    void int_sdiv(int64_t);
+    void int_udiv(int64_t);
+#endif
+
 #ifdef _ASIMD_
     void asimd_fmla_vs_f32f32f32(int64_t);
     void asimd_fmla_vv_f32f32f32(int64_t);
@@ -90,6 +106,78 @@ static void thread_func(void *params)
 {
     cpubm_t *bm = (cpubm_t*)params;
     bm->bench(bm->loop_time);
+}
+
+static void int32_mac_scalar(int64_t loop_time)
+{
+    volatile int32_t a = 1;
+    volatile int32_t b = 2;
+    volatile int32_t c = 3;
+    volatile int32_t d = 4;
+
+    for (int64_t i = 0; i < loop_time; ++i)
+    {
+        a = a + b * c;
+        b = b + a * c;
+        c = c + a * b;
+        d = d + a * b;
+    }
+}
+
+static void int32_alu_scalar(int64_t loop_time)
+{
+    volatile int32_t a = 1;
+    volatile int32_t b = 2;
+    volatile int32_t c = 3;
+    volatile int32_t d = 4;
+
+    for (int64_t i = 0; i < loop_time; ++i)
+    {
+        a = a + b;
+        b = b - c;
+        c = c ^ d;
+        d = d | a;
+        a = a & c;
+        b = b << 1;
+        c = c >> 1;
+        d = d + a;
+    }
+}
+
+static void int32_mult_scalar(int64_t loop_time)
+{
+    volatile int32_t a = 3;
+    volatile int32_t b = 5;
+    volatile int32_t c = 7;
+    volatile int32_t d = 11;
+
+    for (int64_t i = 0; i < loop_time; ++i)
+    {
+        a = a * b;
+        b = b * c;
+        c = c * d;
+        d = d * a;
+    }
+}
+
+static void int32_div_scalar(int64_t loop_time)
+{
+    volatile int32_t a = 1000003;
+    volatile int32_t b = 7;
+    volatile int32_t c = 11;
+    volatile int32_t d = 13;
+
+    for (int64_t i = 0; i < loop_time; ++i)
+    {
+        a = a / b;
+        b = b / c;
+        c = c / d;
+        d = d / 3;
+        if (a == 0) a = 1000003;
+        if (b == 0) b = 7;
+        if (c == 0) c = 11;
+        if (d == 0) d = 13;
+    }
 }
 
 static void cpubm_arm64_one(smtl_handle sh,
@@ -264,6 +352,46 @@ static void parse_thread_pool(char *sets,
 
 static void cpufp_register_isa()
 {
+    reg_new_isa("scalar_int", "mac(i32)", "OPS",
+        0x10000000LL, 8LL, int32_mac_scalar);
+    reg_new_isa("scalar_int", "alu(i32)", "OPS",
+        0x10000000LL, 8LL, int32_alu_scalar);
+    reg_new_isa("scalar_int", "mul(i32)", "OPS",
+        0x10000000LL, 4LL, int32_mult_scalar);
+    reg_new_isa("scalar_int", "div(i32)", "OPS",
+        0x10000000LL, 4LL, int32_div_scalar);
+
+#ifdef _INT_
+    reg_new_isa("INTALU", "ADD", "OPS",
+        0x10000000LL, 8LL, int_add);
+    reg_new_isa("INTALU", "SUB", "OPS",
+        0x10000000LL, 8LL, int_sub);
+    reg_new_isa("INTALU", "AND", "OPS",
+        0x10000000LL, 8LL, int_and);
+    reg_new_isa("INTALU", "ORR", "OPS",
+        0x10000000LL, 8LL, int_orr);
+    reg_new_isa("INTALU", "EOR", "OPS",
+        0x10000000LL, 8LL, int_eor);
+    reg_new_isa("INTALU", "LSL", "OPS",
+        0x10000000LL, 8LL, int_lsl);
+    reg_new_isa("INTALU", "LSR", "OPS",
+        0x10000000LL, 8LL, int_lsr);
+    reg_new_isa("INTALU", "ASR", "OPS",
+        0x10000000LL, 8LL, int_asr);
+
+    reg_new_isa("INTMULT", "MUL", "OPS",
+        0x10000000LL, 8LL, int_mul);
+    reg_new_isa("INTMULT", "MADD", "OPS",
+        0x10000000LL, 8LL, int_madd);
+    reg_new_isa("INTMULT", "MSUB", "OPS",
+        0x10000000LL, 8LL, int_msub);
+
+    reg_new_isa("INTDIV", "SDIV", "OPS",
+        0x10000000LL, 4LL, int_sdiv);
+    reg_new_isa("INTDIV", "UDIV", "OPS",
+        0x10000000LL, 4LL, int_udiv);
+#endif
+
 #ifdef _I8MM_
     reg_new_isa("i8mm", "mmla(s32,s8,s8)", "OPS",
         0x10000000LL, 1536LL, asimd_mmla_s32s8s8);
@@ -357,4 +485,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-

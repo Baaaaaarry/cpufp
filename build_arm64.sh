@@ -22,8 +22,8 @@ fi
 $CXX -O3 -c $COMM/table.cpp -o $BUILD_DIR/table.o --sysroot=$TOOLCHAIN/sysroot
 $CXX -O3 -pthread -c $COMM/smtl.cpp -o $BUILD_DIR/smtl.o --sysroot=$TOOLCHAIN/sysroot
 
-# 手动指定 SIMD 特性
-SIMD_FILES=("_I8MM_" "_ASIMD_" "_ASIMD_DP_" "_ASIMD_HP_" "_BF16_")
+# 手动指定 SIMD 特性 (需要与 arm64/cpufp.cpp 宏名与 arm64/asm/*.S 文件名一致)
+SIMD_FILES=("_ASIMD_" "_ASIMD_DP_" "_ASIMD_HP_" "_BF16_" "_INT_")
 SIMD_MACRO=" "
 SIMD_OBJ=" "
 
